@@ -2,6 +2,7 @@ package com.exam.configuration;
 
 import com.exam.service.Impl.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,9 @@ public class MySecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UserDetailsServiceImpl userDetailsServiceImpl;
+
+    @Value("${spring.h2.console.path}")
+    private String h2ConsolePath;
 
     @Override
     @Bean
@@ -62,6 +66,7 @@ public class MySecurityConfig extends WebSecurityConfigurerAdapter {
                 .cors()
                 .disable()
                 .authorizeRequests()
+                .antMatchers(h2ConsolePath + "/**").permitAll()
                 .antMatchers("/generate-token", "/user/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .anyRequest().authenticated()
@@ -69,6 +74,9 @@ public class MySecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling().authenticationEntryPoint(unauthorisedHandler) // error na response ne return karse
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        // fix H2 database console: Refused to display ' in a frame because it set 'X-Frame-Options' to 'deny'
+        http.headers().frameOptions().sameOrigin();
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // checked if token are valid or not
     }
 }
